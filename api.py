@@ -1,7 +1,13 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 from typing import Dict, Any
 import uvicorn
+import logging
+
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Importamos el agente compilado desde app.py
 from app import app as langgraph_app
@@ -11,6 +17,15 @@ api = FastAPI(
     title="Receipt Analyzer API",
     description="API para analizar recibos a partir de URLs de imágenes",
     version="1.0.0"
+)
+
+# Configurar CORS
+api.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Modelo para la request
@@ -39,10 +54,13 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
         Diccionario con los campos extraídos del recibo
     """
     try:
+        logger.info(f"Analizando imagen: {request.image_url}")
         # Invocamos el agente de LangGraph
         result = langgraph_app.invoke({"image_url": request.image_url})
+        logger.info("Análisis completado exitosamente")
         return result["result"]
     except Exception as e:
+        logger.error(f"Error al procesar la imagen: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Error al procesar la imagen: {str(e)}"
