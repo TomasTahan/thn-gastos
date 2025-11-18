@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 import uvicorn
 import logging
+
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +32,7 @@ api.add_middleware(
 # Modelo para la request
 class ReceiptRequest(BaseModel):
     image_url: str
+    conductor_description: Optional[str] = None  # NUEVO campo opcional
 
 # Modelo para la response (opcional, para documentación)
 class ReceiptResponse(BaseModel):
@@ -41,6 +43,7 @@ class ReceiptResponse(BaseModel):
     moneda: str | None
     descripcion: str | None
     identificador_fiscal: str | None
+    keywords: List[str]  # NUEVO
 
 @api.post("/analyze-receipt", response_model=ReceiptResponse)
 async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
@@ -48,17 +51,25 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
     Analiza una imagen de recibo y extrae la información estructurada.
 
     Args:
-        request: Objeto con la URL de la imagen a analizar
+        request: Objeto con la URL de la imagen y opcionalmente descripción del conductor
 
     Returns:
-        Diccionario con los campos extraídos del recibo
+        Diccionario con los campos extraídos del recibo incluyendo keywords
     """
     try:
         logger.info(f"Analizando imagen: {request.image_url}")
+        if request.conductor_description:
+            logger.info(f"Con descripción del conductor: {request.conductor_description}")
+
         # Invocamos el agente de LangGraph
-        result = langgraph_app.invoke({"image_url": request.image_url})
-        logger.info("Análisis completado exitosamente")
+        result = langgraph_app.invoke({
+            "image_url": request.image_url,
+            "conductor_description": request.conductor_description
+        })
+
+        logger.info(f"Análisis completado. Keywords generadas: {result['result'].get('keywords', [])}")
         return result["result"]
+
     except Exception as e:
         logger.error(f"Error al procesar la imagen: {str(e)}")
         raise HTTPException(

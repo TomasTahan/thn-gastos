@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código de la aplicación
 COPY app.py .
 COPY api.py .
-COPY .env .env
 
 # Exponer el puerto 8000
 EXPOSE 8000
