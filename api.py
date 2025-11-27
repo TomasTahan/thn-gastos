@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import uvicorn
 import logging
 
@@ -43,7 +43,6 @@ class ReceiptResponse(BaseModel):
     moneda: str | None
     descripcion: str | None
     identificador_fiscal: str | None
-    keywords: List[str]  # NUEVO
 
 @api.post("/analyze-receipt", response_model=ReceiptResponse)
 async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
@@ -54,7 +53,7 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
         request: Objeto con la URL de la imagen y opcionalmente descripción del conductor
 
     Returns:
-        Diccionario con los campos extraídos del recibo incluyendo keywords
+        Diccionario con los campos extraídos del recibo
     """
     try:
         logger.info(f"Analizando imagen: {request.image_url}")
@@ -67,7 +66,7 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
             "conductor_description": request.conductor_description
         })
 
-        logger.info(f"Análisis completado. Keywords generadas: {result['result'].get('keywords', [])}")
+        logger.info(f"Análisis completado exitosamente")
         return result["result"]
 
     except Exception as e:
