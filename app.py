@@ -1,5 +1,5 @@
 import os
-from typing import TypedDict, Dict, Any, List, Optional
+from typing import TypedDict, Dict, Any, Optional
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,23 +23,6 @@ class ReceiptSchema(BaseModel):
     moneda: Optional[str] = Field(None, description="Segun el país de la boleta, la moneda puede cambiar. CLP para Chile, ARS para Argentina, BRL para Brasil, PEN para Perú y PYG para Paraguay.")
     descripcion: Optional[str] = Field(None, description="En caso de que esté disponible, agregar una descripción del recibo. Ejemplo: 'Compra de combustible en estación Shell'")
     identificador_fiscal: Optional[str] = Field(None, description="Número de identificación fiscal del emisor del recibo si está disponible. Ejemplos:'CUIT arg, RUT chile, CNPJ brasil, RUC peru y RUC paraguay'")
-
-    # NUEVO CAMPO
-    keywords: List[str] = Field(
-        default_factory=list,
-        description=(
-            "Lista de palabras clave que identifican el tipo de gasto. "
-            "Basándote en la imagen Y en la descripción del conductor (si está disponible), "
-            "genera 3-5 keywords relevantes que ayuden a categorizar este gasto. "
-            "Ejemplos: "
-            "- Peaje → ['peaje', 'tag', 'autopista', 'ruta'] "
-            "- Combustible → ['combustible', 'diesel', 'gasolina', 'fuel'] "
-            "- Hotel → ['hotel', 'alojamiento', 'hospedaje', 'lodging'] "
-            "- Comida → ['comida', 'restaurant', 'almuerzo', 'food'] "
-            "- Reparación → ['reparacion', 'taller', 'mecanico', 'service'] "
-            "Incluye tanto palabras en español como posibles términos en inglés si son relevantes."
-        )
-    )
 # ---------- Estado del grafo ----------
 class GraphState(TypedDict):
     image_url: str  # input
@@ -95,22 +78,10 @@ SYSTEM_PROMPT = (
     7. **identificador_fiscal**: Número de identificación fiscal del emisor (CUIT, RUT, CNPJ, RUC).
        Si no está, pon null.
 
-    8. **keywords**: IMPORTANTE - Genera 3-5 palabras clave que ayuden a categorizar este gasto.
-       - Analiza la imagen para identificar el tipo de gasto
-       - Si el conductor proporcionó una descripción verbal, úsala para generar keywords más precisas
-       - Incluye términos en español y posibles variantes
-       - Ejemplos:
-         * "Peaje de Cristo Redentor" → ["peaje", "tag", "autopista", "internacional", "ruta"]
-         * "Nafta YPF" → ["combustible", "gasolina", "nafta", "ypf", "fuel"]
-         * "Hotel en Santiago" → ["hotel", "alojamiento", "hospedaje", "lodging"]
-         * "Almuerzo" → ["comida", "restaurant", "almuerzo", "food", "meal"]
-         * "Cambio de aceite" → ["mantenimiento", "reparacion", "taller", "aceite", "service"]
-
     ## Reglas importantes:
     - NO inventes datos. Si no encuentras algo, usa null.
-    - Las keywords son CRÍTICAS para la categorización automática.
-    - Usa la descripción del conductor (si está disponible) para hacer keywords más precisas.
-    - Sé consistente con las keywords: siempre en minúsculas, sin acentos en lo posible.
+    - Extrae SOLO la información que está visible en la imagen del recibo.
+    - La categorización del gasto la hará el usuario manualmente en Odoo.
     """
 )
 
@@ -124,10 +95,9 @@ def analyze_node(state: GraphState) -> GraphState:
     # Construir el mensaje del usuario
     user_text = "Extrae los campos del recibo de la imagen."
 
-    # Si hay descripción del conductor, incluirla
+    # Si hay descripción del conductor, incluirla como contexto adicional
     if conductor_desc:
-        user_text += f"\n\nDescripción del conductor: \"{conductor_desc}\""
-        user_text += "\n\nUsa esta descripción para generar keywords más precisas y contextuales."
+        user_text += f"\n\nContexto del conductor: \"{conductor_desc}\""
 
     user = HumanMessage(content=[
         {"type": "text", "text": user_text},
