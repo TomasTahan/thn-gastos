@@ -10,8 +10,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Importamos el agente compilado desde app.py
+# Importamos los agentes compilados
 from app import app as langgraph_app
+from app_rendicion import app as langgraph_rendicion_app
 
 # Creamos la aplicación FastAPI
 api = FastAPI(
@@ -62,6 +63,38 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
 
         # Invocamos el agente de LangGraph
         result = langgraph_app.invoke({
+            "image_url": request.image_url,
+            "conductor_description": request.conductor_description
+        })
+
+        logger.info(f"Análisis completado exitosamente")
+        return result["result"]
+
+    except Exception as e:
+        logger.error(f"Error al procesar la imagen: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al procesar la imagen: {str(e)}"
+        )
+
+@api.post("/analyze-rendicion", response_model=ReceiptResponse)
+async def analyze_rendicion(request: ReceiptRequest) -> Dict[str, Any]:
+    """
+    Analiza una imagen de rendición y extrae la información estructurada.
+
+    Args:
+        request: Objeto con la URL de la imagen y opcionalmente descripción del conductor
+
+    Returns:
+        Diccionario con los campos extraídos de la rendición
+    """
+    try:
+        logger.info(f"Analizando imagen de rendición: {request.image_url}")
+        if request.conductor_description:
+            logger.info(f"Con descripción del conductor: {request.conductor_description}")
+
+        # Invocamos el agente de rendiciones de LangGraph
+        result = langgraph_rendicion_app.invoke({
             "image_url": request.image_url,
             "conductor_description": request.conductor_description
         })
