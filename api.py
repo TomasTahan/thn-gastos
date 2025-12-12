@@ -33,9 +33,16 @@ api.add_middleware(
 # Modelo para la request
 class ReceiptRequest(BaseModel):
     image_url: str
-    conductor_description: Optional[str] = None  # NUEVO campo opcional
+    conductor_description: Optional[str] = None  # Campo opcional
 
-# Modelo para la response (opcional, para documentación)
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "image_url": "https://ejemplo.com/imagen.jpg"
+            }
+        }
+
+# Modelo para la response de recibos
 class ReceiptResponse(BaseModel):
     referencia: str | None
     razon_social: str | None
@@ -44,6 +51,13 @@ class ReceiptResponse(BaseModel):
     moneda: str | None
     descripcion: str | None
     identificador_fiscal: str | None
+
+# Modelo para la response de rendiciones
+class RendicionResponse(BaseModel):
+    numero_op: str | None
+    chofer: str
+    gastos: list
+    viaticos: list
 
 @api.post("/analyze-receipt", response_model=ReceiptResponse)
 async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
@@ -77,7 +91,7 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
             detail=f"Error al procesar la imagen: {str(e)}"
         )
 
-@api.post("/analyze-rendicion", response_model=ReceiptResponse)
+@api.post("/analyze-rendicion", response_model=RendicionResponse)
 async def analyze_rendicion(request: ReceiptRequest) -> Dict[str, Any]:
     """
     Analiza una imagen de rendición y extrae la información estructurada.
