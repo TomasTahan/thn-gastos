@@ -4,6 +4,7 @@ from pydantic import BaseModel, HttpUrl
 from typing import Dict, Any, Optional
 import uvicorn
 import logging
+from datetime import datetime
 
 
 # Configuración de logging
@@ -52,12 +53,19 @@ class ReceiptResponse(BaseModel):
     descripcion: str | None
     identificador_fiscal: str | None
 
+# Modelo para chofer info
+class ChoferInfoResponse(BaseModel):
+    nombre_completo: str
+    user_id: str
+
 # Modelo para la response de rendiciones
 class RendicionResponse(BaseModel):
     numero_op: str | None
+    fecha: str  # Siempre presente (usa fecha de hoy si no se encuentra en la imagen)
     chofer: str
     gastos: list
     viaticos: list
+    chofer_info: ChoferInfoResponse | None = None
 
 @api.post("/analyze-receipt", response_model=ReceiptResponse)
 async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
@@ -113,8 +121,15 @@ async def analyze_rendicion(request: ReceiptRequest) -> Dict[str, Any]:
             "conductor_description": request.conductor_description
         })
 
+        # Si la fecha es null, usar la fecha de hoy
+        response_data = result["result"]
+        if response_data.get("fecha") is None:
+            today = datetime.now().strftime("%d/%m/%Y")
+            response_data["fecha"] = today
+            logger.info(f"Fecha no encontrada en la imagen, usando fecha de hoy: {today}")
+
         logger.info(f"Análisis completado exitosamente")
-        return result["result"]
+        return response_data
 
     except Exception as e:
         logger.error(f"Error al procesar la imagen: {str(e)}")

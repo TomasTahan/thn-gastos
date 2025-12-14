@@ -15,5 +15,6 @@ dependencies = [
     "pydantic>=2.12.1",
     "python-dotenv>=1.1.1",
     "rich>=14.2.0",
+    "supabase>=2.25.1",
     "uvicorn>=0.32.0",
 ]
