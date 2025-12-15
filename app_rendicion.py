@@ -11,14 +11,27 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 # Structured output con Pydantic
 from pydantic import BaseModel, Field
+from enum import Enum
 
 # Supabase
 from supabase import create_client, Client
 
 # ---------- Definimos el schema de salida ----------
 
+class CategoriaGasto(str, Enum):
+    """Categorías permitidas para gastos"""
+    PEAJE = "PEAJE"
+    MIGRAC = "MIGRAC"
+    ADUANA = "ADUANA"
+    TUNEL = "TUNEL"
+    REPRESEN = "REPRESEN"
+    SENASA = "SENASA"
+    ISCAMEN = "ISCAMEN"
+    GOMERIA = "GOMERIA"
+    VARIOS = "VARIOS"
+
 class GastoItem(BaseModel):
-    categoria: str = Field(..., description="Categoría del gasto")
+    categoria: CategoriaGasto = Field(..., description="Categoría del gasto. Debe ser una de las categorías permitidas")
     monto: float = Field(..., description="Monto del gasto")
     pais: str = Field(..., description="País del gasto. Ejemplos: Chile, Argentina, Brasil, Perú, Paraguay")
 
@@ -116,10 +129,27 @@ SYSTEM_PROMPT = (
       * El nombre de la fila es el PAÍS
       * El valor es el MONTO
     - **NO incluyas** las filas o columnas de TOTAL
-    - Ejemplo: Si en la columna "COMBUSTIBLE" y fila "CHILE" hay 50000, creas:
+
+    - **CATEGORÍAS VÁLIDAS** (IMPORTANTE - solo puedes usar estas):
+      * PEAJE - para peajes
+      * MIGRAC - para migraciones
+      * ADUANA - para aduanas
+      * TUNEL - para túneles
+      * REPRESEN - para representación
+      * SENASA - para SENASA
+      * ISCAMEN - para ISCAMEN
+      * GOMERIA - para gomerías
+      * VARIOS - para cualquier otro gasto que no encaje en las categorías anteriores
+
+    - **Mapeo de categorías**: Si encuentras un nombre de columna diferente, debes mapearlo a la categoría válida más cercana:
+      * "REPRESENTACIÓN" → REPRESEN
+      * "REPRESEN." → REPRESEN
+      * Si no hay coincidencia clara → VARIOS
+
+    - Ejemplo: Si en la columna "PEAJE" y fila "CHILE" hay 50000:
       ```json
       {
-        "categoria": "COMBUSTIBLE",
+        "categoria": "PEAJE",
         "monto": 50000,
         "pais": "Chile"
       }
