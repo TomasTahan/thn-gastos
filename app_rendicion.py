@@ -103,13 +103,24 @@ SYSTEM_PROMPT = (
     - **IMPORTANTE**: Este campo es OPCIONAL
     - Si NO encuentras una fecha visible en el formulario, debes poner null
     - NO inventes una fecha. Si no está, pon null
-    - Si encuentras la fecha, puede estar en diferentes formatos como: 24/11/25, 24/11/2025, 24-11-25, etc.
-    - Debes convertir la fecha al formato dd/MM/yyyy
-    - Si la fecha tiene año de 2 dígitos (ej: 25), conviértelo a 4 dígitos (ej: 2025)
-    - Ejemplos de conversión:
-      * "24/11/25" → "24/11/2025"
-      * "01/12/24" → "01/12/2024"
-      * "15-03-25" → "15/03/2025"
+
+    - **FORMATOS POSIBLES**:
+      * Formato completo: "dd/MM/yyyy" o "d/M/yy" (ej: "24/11/2025" o "2/7/25")
+      * Formato sin año: "dd/MM" o "d/M" (ej: "25/11" o "2/7")
+
+    - **CONVERSIÓN DE FECHAS**:
+      * SIEMPRE convierte al formato dd/MM/yyyy
+      * Si la fecha NO tiene año, usa el año actual que te proporciono en el contexto
+      * Si la fecha tiene año de 2 dígitos (ej: 25), conviértelo a 4 dígitos (ej: 2025)
+      * Asegúrate de que el día y mes tengan 2 dígitos con cero a la izquierda si es necesario
+
+    - **Ejemplos de conversión**:
+      * "24/11/25" → "24/11/2025" (año de 2 dígitos)
+      * "01/12/24" → "01/12/2024" (año de 2 dígitos)
+      * "15-03-25" → "15/03/2025" (con guiones)
+      * "25/11" → "25/11/2025" (sin año, usar año actual)
+      * "2/7" → "02/07/2025" (sin año y sin ceros, agregar ceros y año actual)
+      * "2/7/25" → "02/07/2025" (agregar ceros faltantes)
       * Sin fecha visible → null
 
     ### 3. CHOFER (chofer)
@@ -218,8 +229,24 @@ def analyze_node(state: GraphState) -> GraphState:
 
     system = SystemMessage(content=SYSTEM_PROMPT)
 
+    # Obtener la fecha actual para dar contexto
+    from datetime import datetime
+    fecha_hoy = datetime.now()
+    fecha_hoy_str = fecha_hoy.strftime("%d/%m/%Y")
+    anio_actual = fecha_hoy.year
+
     # Construir el mensaje del usuario
-    user_text = "Extrae los campos de la rendición de la imagen."
+    user_text = f"""Extrae los campos de la rendición de la imagen.
+
+CONTEXTO IMPORTANTE - Fecha actual: {fecha_hoy_str}
+Año actual: {anio_actual}
+
+Cuando encuentres fechas sin año completo, usa el año actual ({anio_actual}).
+Ejemplos de interpretación:
+- "25/11" → 25/11/{anio_actual}
+- "2/7" → 02/07/{anio_actual}
+- "2/7/25" → 02/07/2025 (el año está especificado)
+"""
 
     # Si hay descripción del conductor, incluirla como contexto adicional
     if conductor_desc:
