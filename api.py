@@ -64,6 +64,7 @@ class RendicionResponse(BaseModel):
     fecha: str  # Siempre presente (usa fecha de hoy si no se encuentra en la imagen)
     chofer: str
     gastos: list
+    adblue: float | None
     viaticos: list
     chofer_info: ChoferInfoResponse | None = None
 

@@ -51,6 +51,7 @@ class RendicionSchema(BaseModel):
     fecha: Optional[str] = Field(None, description="Fecha de la rendición en formato dd/MM/yyyy. Ubicada arriba a la izquierda del formulario. Si no está visible, devolver null")
     chofer: str = Field(..., description="Nombre del chofer que realizó la rendición. Ubicado arriba a la izquierda. Siempre presente")
     gastos: List[GastoItem] = Field(default_factory=list, description="Listado de gastos de la rendición extraídos de la tabla GASTOS GENERALES")
+    adblue: Optional[float] = Field(None, description="Monto de ADD-BLUE extraído de la sección ADD-BLUE, campo CONTADO. Si no hay valor o está vacío, devolver null")
     viaticos: List[ViaticoItem] = Field(default_factory=list, description="Listado de viáticos de la rendición extraídos de la tabla VIATICOS")
     chofer_info: Optional[ChoferInfo] = Field(None, description="Información del chofer identificado desde la base de datos")
 
@@ -167,7 +168,22 @@ SYSTEM_PROMPT = (
       ```
     - Si una celda está vacía o es 0, NO la incluyas en el listado
 
-    ### 5. VIÁTICOS (viaticos)
+    ### 5. ADD-BLUE (adblue)
+    - Ubicación: Sección con título **"ADD-BLUE"** (entre GASTOS GENERALES y VIATICOS)
+    - **IMPORTANTE**: Este campo es OPCIONAL
+    - Busca dentro de esta sección el campo llamado **"CONTADO"**
+    - Extrae el valor numérico que aparece en el campo CONTADO
+    - Si no hay sección ADD-BLUE, o si el campo CONTADO está vacío o es 0, devuelve null
+    - Ejemplo: Si en ADD-BLUE → CONTADO hay 25000:
+      ```json
+      "adblue": 25000
+      ```
+    - Si no hay valor:
+      ```json
+      "adblue": null
+      ```
+
+    ### 6. VIÁTICOS (viaticos)
     - Ubicación: Tabla con título **"VIATICOS"** (debajo de gastos generales)
     - Busca secciones específicas por país:
       * "VIATICOS EN CHILE" (o CHILE)
@@ -210,6 +226,7 @@ SYSTEM_PROMPT = (
           "pais": "string"
         }
       ],
+      "adblue": number o null,
       "viaticos": [
         {
           "monto": number,
