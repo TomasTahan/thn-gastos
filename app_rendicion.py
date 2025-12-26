@@ -100,29 +100,31 @@ SYSTEM_PROMPT = (
     - Si tiene valor, extraelo como string (ejemplo: "677524")
 
     ### 2. FECHA (fecha)
-    - Ubicación: **Arriba del todo a la izquierda** del formulario
-    - **IMPORTANTE**: Este campo es OPCIONAL
-    - Si NO encuentras una fecha visible en el formulario, debes poner null
+    - Ubicación: Campo **"F. CARGA"** (Fecha de Carga) en la sección de datos del viaje
+    - **IMPORTANTE**: Busca específicamente el campo "F. CARGA", NO uses la fecha del encabezado del formulario (esa es la fecha de creación del formulario, no la fecha de carga)
+    - Este campo es OPCIONAL. Si NO encuentras el campo F. CARGA o está vacío, devuelve null
     - NO inventes una fecha. Si no está, pon null
 
     - **FORMATOS POSIBLES**:
       * Formato completo: "dd/MM/yyyy" o "d/M/yy" (ej: "24/11/2025" o "2/7/25")
-      * Formato sin año: "dd/MM" o "d/M" (ej: "25/11" o "2/7")
+      * Formato sin año: "dd/MM" o "d/M" (ej: "25/11" o "2/7" o "15/12")
 
     - **CONVERSIÓN DE FECHAS**:
       * SIEMPRE convierte al formato dd/MM/yyyy
-      * Si la fecha NO tiene año, usa el año actual que te proporciono en el contexto
+      * **MUY IMPORTANTE**: Si la fecha NO tiene año, usa el AÑO ACTUAL que te proporciono en el contexto. NUNCA uses el año del encabezado del formulario (como 2022)
       * Si la fecha tiene año de 2 dígitos (ej: 25), conviértelo a 4 dígitos (ej: 2025)
       * Asegúrate de que el día y mes tengan 2 dígitos con cero a la izquierda si es necesario
 
-    - **Ejemplos de conversión**:
+    - **Ejemplos de conversión** (asumiendo año actual 2025):
+      * "15/12" → "15/12/2025" (sin año, usar año actual proporcionado)
       * "24/11/25" → "24/11/2025" (año de 2 dígitos)
       * "01/12/24" → "01/12/2024" (año de 2 dígitos)
       * "15-03-25" → "15/03/2025" (con guiones)
-      * "25/11" → "25/11/2025" (sin año, usar año actual)
       * "2/7" → "02/07/2025" (sin año y sin ceros, agregar ceros y año actual)
       * "2/7/25" → "02/07/2025" (agregar ceros faltantes)
-      * Sin fecha visible → null
+      * Sin F. CARGA visible → null
+
+    - **ADVERTENCIA**: IGNORA completamente la fecha que aparece en el encabezado del formulario (como "Fecha: 12/10/2022"). Esa es la fecha de revisión del template, NO la fecha de carga del viaje
 
     ### 3. CHOFER (chofer)
     - Ubicación: **Arriba a la izquierda** del formulario (debajo de la fecha)
