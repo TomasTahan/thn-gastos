@@ -129,6 +129,7 @@ async def analyze_rendicion(request: ReceiptRequest) -> Dict[str, Any]:
             response_data["fecha"] = today
             logger.info(f"Fecha no encontrada en la imagen, usando fecha de hoy: {today}")
 
+        logger.info(f"Chofer detectado: {response_data.get('chofer')}")
         logger.info(f"Análisis completado exitosamente")
         return response_data
 
