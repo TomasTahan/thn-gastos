@@ -4,6 +4,7 @@ from pydantic import BaseModel, HttpUrl
 from typing import Dict, Any, Optional
 import uvicorn
 import logging
+import asyncio
 from datetime import datetime
 
 
@@ -84,11 +85,15 @@ async def analyze_receipt(request: ReceiptRequest) -> Dict[str, Any]:
         if request.conductor_description:
             logger.info(f"Con descripción del conductor: {request.conductor_description}")
 
-        # Invocamos el agente de LangGraph
-        result = langgraph_app.invoke({
-            "image_url": request.image_url,
-            "conductor_description": request.conductor_description
-        })
+        # Invocamos el agente de LangGraph en thread pool (no bloqueante)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: langgraph_app.invoke({
+                "image_url": request.image_url,
+                "conductor_description": request.conductor_description
+            })
+        )
 
         logger.info(f"Análisis completado exitosamente")
         return result["result"]
@@ -116,11 +121,15 @@ async def analyze_rendicion(request: ReceiptRequest) -> Dict[str, Any]:
         if request.conductor_description:
             logger.info(f"Con descripción del conductor: {request.conductor_description}")
 
-        # Invocamos el agente de rendiciones de LangGraph
-        result = langgraph_rendicion_app.invoke({
-            "image_url": request.image_url,
-            "conductor_description": request.conductor_description
-        })
+        # Invocamos el agente de rendiciones de LangGraph en thread pool (no bloqueante)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: langgraph_rendicion_app.invoke({
+                "image_url": request.image_url,
+                "conductor_description": request.conductor_description
+            })
+        )
 
         # Si la fecha es null, usar la fecha de hoy
         response_data = result["result"]
